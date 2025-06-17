@@ -5,7 +5,13 @@ pipeline {
     stage('Checkout') {
       steps {
         checkout scm
-        githubNotify context: 'Jenkins CI', status: 'PENDING', description: 'Starting build...'
+        script {
+          githubNotify(
+            status: 'PENDING',
+            description: 'Starting build...',
+            context: 'Jenkins CI'
+          )
+        }
       }
     }
 
@@ -13,10 +19,19 @@ pipeline {
       steps {
         script {
           try {
-            sh 'npm ci' // More reliable than npm install for CI
+            sh 'npm install'
             sh 'npm test'
+            githubNotify(
+              status: 'SUCCESS',
+              description: 'Tests passed ✅',
+              context: 'Jenkins CI'
+            )
           } catch (e) {
-            githubNotify context: 'Jenkins CI', status: 'FAILURE', description: 'Tests failed ❌'
+            githubNotify(
+              status: 'FAILURE',
+              description: 'Tests failed ❌',
+              context: 'Jenkins CI'
+            )
             throw e
           }
         }
@@ -26,10 +41,22 @@ pipeline {
 
   post {
     failure {
-      githubNotify context: 'Jenkins CI', status: 'FAILURE', description: 'Build failed ❌'
+      script {
+        githubNotify(
+          status: 'FAILURE',
+          description: 'Build failed ❌',
+          context: 'Jenkins CI'
+        )
+      }
     }
     success {
-      githubNotify context: 'Jenkins CI', status: 'SUCCESS', description: 'Build successful ✅'
+      script {
+        githubNotify(
+          status: 'SUCCESS',
+          description: 'Build successful ✅',
+          context: 'Jenkins CI'
+        )
+      }
     }
   }
 }

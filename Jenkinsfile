@@ -13,9 +13,8 @@ pipeline {
       steps {
         script {
           try {
-            sh 'npm install'
+            sh 'npm ci' // More reliable than npm install for CI
             sh 'npm test'
-            githubNotify context: 'Jenkins CI', status: 'SUCCESS', description: 'Tests passed ✅'
           } catch (e) {
             githubNotify context: 'Jenkins CI', status: 'FAILURE', description: 'Tests failed ❌'
             throw e

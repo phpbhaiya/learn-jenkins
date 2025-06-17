@@ -1,11 +1,5 @@
 pipeline {
-  agent {
-    docker {
-      image 'node:18-alpine'
-      // Keep the workspace persistent between stages
-      args '-v /var/jenkins_home/workspace:/workspace'
-    }
-  }
+  agent any
 
   stages {
     stage('Checkout') {
@@ -21,6 +15,33 @@ pipeline {
             sha: "${env.GIT_COMMIT}",
             credentialsId: '4ea9c5f0-bf0e-4dd6-a4b8-159222378fe6'
           )
+        }
+      }
+    }
+
+    stage('Setup Node.js') {
+      steps {
+        script {
+          // Check if Node.js is already installed
+          def nodeInstalled = sh(script: 'which node', returnStatus: true) == 0
+          
+          if (!nodeInstalled) {
+            echo 'Installing Node.js...'
+            sh '''
+              # Update package manager
+              apt-get update -y
+              
+              # Install curl if not present
+              apt-get install -y curl
+              
+              # Install Node.js 18.x
+              curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+              apt-get install -y nodejs
+            '''
+          }
+          
+          // Verify installation
+          sh 'node --version && npm --version'
         }
       }
     }

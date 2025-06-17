@@ -2,15 +2,35 @@ pipeline {
   agent any
 
   stages {
-    stage('Install') {
+    stage('Checkout') {
       steps {
-        sh 'npm ci'
+        checkout scm
+        githubNotify context: 'Jenkins CI', status: 'PENDING', description: 'Starting build...'
       }
     }
-    stage('Test') {
+
+    stage('Install & Test') {
       steps {
-        sh 'npm test'
+        script {
+          try {
+            sh 'npm install'
+            sh 'npm test'
+            githubNotify context: 'Jenkins CI', status: 'SUCCESS', description: 'Tests passed ✅'
+          } catch (e) {
+            githubNotify context: 'Jenkins CI', status: 'FAILURE', description: 'Tests failed ❌'
+            throw e
+          }
+        }
       }
+    }
+  }
+
+  post {
+    failure {
+      githubNotify context: 'Jenkins CI', status: 'FAILURE', description: 'Build failed ❌'
+    }
+    success {
+      githubNotify context: 'Jenkins CI', status: 'SUCCESS', description: 'Build successful ✅'
     }
   }
 }

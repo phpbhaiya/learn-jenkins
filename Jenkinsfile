@@ -1,5 +1,11 @@
 pipeline {
-  agent any
+  agent {
+    docker {
+      image 'node:18-alpine'
+      // Keep the workspace persistent between stages
+      args '-v /var/jenkins_home/workspace:/workspace'
+    }
+  }
 
   stages {
     stage('Checkout') {
@@ -10,10 +16,10 @@ pipeline {
             status: 'PENDING',
             description: 'Starting build...',
             context: 'Jenkins CI',
-            account: 'phpbhaiya',  // Your GitHub username
-            repo: 'learn-jenkins', // Your repository name
+            account: 'phpbhaiya',
+            repo: 'learn-jenkins',
             sha: "${env.GIT_COMMIT}",
-            credentialsId: '4ea9c5f0-bf0e-4dd6-a4b8-159222378fe6'  // Your existing credentials ID
+            credentialsId: '4ea9c5f0-bf0e-4dd6-a4b8-159222378fe6'
           )
         }
       }

@@ -2,7 +2,13 @@ pipeline {
   agent any
 
   stages {
-    stage('Docker Build') {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build') {
       steps {
         sh 'docker run hello-world'
       }

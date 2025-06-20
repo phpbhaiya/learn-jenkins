@@ -5,8 +5,8 @@ pipeline {
     IMAGE_NAME = 'basic-express-app'
     TAG = 'latest'
     GITHUB_CONTEXT = 'build'
-    GITHUB_CREDENTIALS_ID = 'github-creds' // Must match Jenkins credentials ID
-    GITHUB_REPO = 'phpbhaiya/learn-jenkins' // Format: username/repo
+    GITHUB_REPO = 'phpbhaiya/learn-jenkins'         // your GitHub repo
+    GITHUB_CREDENTIALS_ID = 'github-creds'          // Jenkins credentials ID
   }
 
   stages {
@@ -14,7 +14,6 @@ pipeline {
       steps {
         checkout scm
         script {
-          // Store the current Git SHA to use in GitHub notify steps
           env.GIT_COMMIT = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
         }
       }
@@ -59,7 +58,7 @@ pipeline {
         githubNotify(
           context: env.GITHUB_CONTEXT,
           status: 'SUCCESS',
-          description: 'Build passed',
+          description: 'Build succeeded',
           repo: env.GITHUB_REPO,
           sha: env.GIT_COMMIT,
           credentialsId: env.GITHUB_CREDENTIALS_ID

@@ -1,16 +1,14 @@
 def gitCommit = ''
-
 pipeline {
   agent any
-
   environment {
     IMAGE_NAME = 'basic-express-app'
     TAG = 'latest'
     GITHUB_CONTEXT = 'build'
     GITHUB_REPO = 'phpbhaiya/learn-jenkins'
+    GITHUB_ACCOUNT = 'phpbhaiya'
     GITHUB_CREDENTIALS_ID = 'github-creds'
   }
-
   stages {
     stage('Checkout') {
       steps {
@@ -20,7 +18,6 @@ pipeline {
         }
       }
     }
-
     stage('Notify GitHub - Pending') {
       steps {
         script {
@@ -29,19 +26,18 @@ pipeline {
             status: 'PENDING',
             description: 'Build started',
             repo: env.GITHUB_REPO,
+            account: env.GITHUB_ACCOUNT,
             sha: gitCommit,
             credentialsId: env.GITHUB_CREDENTIALS_ID
           )
         }
       }
     }
-
     stage('Build Docker Image') {
       steps {
         sh "docker build -t $IMAGE_NAME:$TAG ."
       }
     }
-
     stage('Test Run') {
       steps {
         sh """
@@ -53,7 +49,6 @@ pipeline {
       }
     }
   }
-
   post {
     success {
       script {
@@ -62,6 +57,7 @@ pipeline {
           status: 'SUCCESS',
           description: 'Build succeeded',
           repo: env.GITHUB_REPO,
+          account: env.GITHUB_ACCOUNT,
           sha: gitCommit,
           credentialsId: env.GITHUB_CREDENTIALS_ID
         )
@@ -74,6 +70,7 @@ pipeline {
           status: 'FAILURE',
           description: 'Build failed',
           repo: env.GITHUB_REPO,
+          account: env.GITHUB_ACCOUNT,
           sha: gitCommit,
           credentialsId: env.GITHUB_CREDENTIALS_ID
         )

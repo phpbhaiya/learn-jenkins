@@ -25,7 +25,7 @@ pipeline {
       steps {
         script {
           sh "docker run -d -p 6666:6666 --name temp-app $IMAGE_NAME:$TAG"
-          sh "sleep 5"
+          sh "sleep 15"
           sh "curl -f http://localhost:6666 || echo 'App failed to respond'"
           sh "docker rm -f temp-app"
         }

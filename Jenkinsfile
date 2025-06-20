@@ -1,3 +1,5 @@
+def gitCommit = ''
+
 pipeline {
   agent any
 
@@ -5,8 +7,8 @@ pipeline {
     IMAGE_NAME = 'basic-express-app'
     TAG = 'latest'
     GITHUB_CONTEXT = 'build'
-    GITHUB_REPO = 'phpbhaiya/learn-jenkins'         // your GitHub repo
-    GITHUB_CREDENTIALS_ID = 'github-creds'          // Jenkins credentials ID
+    GITHUB_REPO = 'phpbhaiya/learn-jenkins'
+    GITHUB_CREDENTIALS_ID = 'github-creds'
   }
 
   stages {
@@ -14,7 +16,7 @@ pipeline {
       steps {
         checkout scm
         script {
-          env.GIT_COMMIT = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+          gitCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
         }
       }
     }
@@ -27,7 +29,7 @@ pipeline {
             status: 'PENDING',
             description: 'Build started',
             repo: env.GITHUB_REPO,
-            sha: env.GIT_COMMIT,
+            sha: gitCommit,
             credentialsId: env.GITHUB_CREDENTIALS_ID
           )
         }
@@ -60,12 +62,11 @@ pipeline {
           status: 'SUCCESS',
           description: 'Build succeeded',
           repo: env.GITHUB_REPO,
-          sha: env.GIT_COMMIT,
+          sha: gitCommit,
           credentialsId: env.GITHUB_CREDENTIALS_ID
         )
       }
     }
-
     failure {
       script {
         githubNotify(
@@ -73,7 +74,7 @@ pipeline {
           status: 'FAILURE',
           description: 'Build failed',
           repo: env.GITHUB_REPO,
-          sha: env.GIT_COMMIT,
+          sha: gitCommit,
           credentialsId: env.GITHUB_CREDENTIALS_ID
         )
       }

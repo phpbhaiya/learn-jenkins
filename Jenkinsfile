@@ -5,7 +5,7 @@ pipeline {
     IMAGE_NAME = 'basic-express-app'
     TAG = 'latest'
     GITHUB_CONTEXT = 'build'
-    GITHUB_REPO = 'phpbhaiya/learn-jenkins'
+    GITHUB_REPO = 'learn-jenkins'
     GITHUB_ACCOUNT = 'phpbhaiya'
     GITHUB_CREDENTIALS_ID = 'github-creds'
   }

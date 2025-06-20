@@ -47,13 +47,42 @@ pipeline {
     }
     stage('Test Run') {
       steps {
-        sh """
-          # Test the newly built image
-          docker run -d -p 7777:$APP_PORT --name temp-test-app $IMAGE_NAME:$TAG
-          sleep 5
-          curl -f http://localhost:7777 || (echo 'App failed health check' && exit 1)
-          docker rm -f temp-test-app
-        """
+        script {
+          sh """
+            # Test the newly built image
+            echo "🧪 Starting test container..."
+            docker run -d -p 7777:$APP_PORT --name temp-test-app $IMAGE_NAME:$TAG
+            
+            # Wait for container to be ready with retry logic
+            echo "⏳ Waiting for application to start..."
+            for i in {1..30}; do
+              if curl -f http://localhost:7777 > /dev/null 2>&1; then
+                echo "✅ Health check passed on attempt \$i"
+                break
+              fi
+              if [ \$i -eq 30 ]; then
+                echo "❌ Health check failed after 30 attempts"
+                echo "📋 Container logs:"
+                docker logs temp-test-app
+                echo "📊 Container status:"
+                docker ps -a | grep temp-test-app
+                exit 1
+              fi
+              echo "⏳ Attempt \$i failed, retrying in 1 second..."
+              sleep 1
+            done
+            
+            # Additional verification
+            echo "🔍 Final verification..."
+            response=\$(curl -s http://localhost:7777)
+            echo "📄 Response: \$response"
+          """
+        }
+      }
+      post {
+        always {
+          sh 'docker rm -f temp-test-app || true'
+        }
       }
     }
     stage('Deploy to Production') {
@@ -82,15 +111,22 @@ pipeline {
               --restart unless-stopped \\
               $IMAGE_NAME:$TAG
             
-            # Verify deployment
+            # Verify deployment with retry logic
             echo "🔍 Verifying deployment..."
-            sleep 5
-            if curl -f http://localhost:$APP_PORT; then
-              echo "✅ Deployment successful!"
-            else
-              echo "❌ Deployment verification failed!"
-              exit 1
-            fi
+            for i in {1..15}; do
+              if curl -f http://localhost:$APP_PORT > /dev/null 2>&1; then
+                echo "✅ Production deployment verified on attempt \$i"
+                break
+              fi
+              if [ \$i -eq 15 ]; then
+                echo "❌ Production deployment verification failed"
+                echo "📋 Container logs:"
+                docker logs $CONTAINER_NAME
+                exit 1
+              fi
+              echo "⏳ Verification attempt \$i failed, retrying..."
+              sleep 2
+            done
           """
         }
       }

@@ -55,7 +55,8 @@ pipeline {
             
             # Wait for container to be ready with retry logic
             echo "⏳ Waiting for application to start..."
-            for i in {1..30}; do
+            i=1
+            while [ \$i -le 30 ]; do
               if curl -f http://localhost:7777 > /dev/null 2>&1; then
                 echo "✅ Health check passed on attempt \$i"
                 break
@@ -70,6 +71,7 @@ pipeline {
               fi
               echo "⏳ Attempt \$i failed, retrying in 1 second..."
               sleep 1
+              i=\$((i + 1))
             done
             
             # Additional verification
@@ -113,7 +115,8 @@ pipeline {
             
             # Verify deployment with retry logic
             echo "🔍 Verifying deployment..."
-            for i in {1..15}; do
+            i=1
+            while [ \$i -le 15 ]; do
               if curl -f http://localhost:$APP_PORT > /dev/null 2>&1; then
                 echo "✅ Production deployment verified on attempt \$i"
                 break
@@ -126,6 +129,7 @@ pipeline {
               fi
               echo "⏳ Verification attempt \$i failed, retrying..."
               sleep 2
+              i=\$((i + 1))
             done
           """
         }

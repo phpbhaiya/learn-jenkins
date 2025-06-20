@@ -24,7 +24,8 @@ pipeline {
           githubNotify(
             context: env.GITHUB_CONTEXT,
             status: 'PENDING',
-            description: 'Build started',
+            description: 'Jenkins pipeline is building and testing your application...',
+            targetUrl: "${env.BUILD_URL}",
             repo: env.GITHUB_REPO,
             account: env.GITHUB_ACCOUNT,
             sha: gitCommit,
@@ -42,7 +43,7 @@ pipeline {
       steps {
         sh """
           docker run -d -p 6666:6666 --name temp-app $IMAGE_NAME:$TAG
-          sleep 5
+          sleep 30
           curl -f http://localhost:6666 || echo 'App failed to respond'
           docker rm -f temp-app
         """
@@ -55,7 +56,8 @@ pipeline {
         githubNotify(
           context: env.GITHUB_CONTEXT,
           status: 'SUCCESS',
-          description: 'Build succeeded',
+          description: '✅ Build completed successfully! Docker image built and tested.',
+          targetUrl: "${env.BUILD_URL}",
           repo: env.GITHUB_REPO,
           account: env.GITHUB_ACCOUNT,
           sha: gitCommit,
@@ -68,7 +70,8 @@ pipeline {
         githubNotify(
           context: env.GITHUB_CONTEXT,
           status: 'FAILURE',
-          description: 'Build failed',
+          description: '❌ Build failed during pipeline execution. Check Jenkins logs for details.',
+          targetUrl: "${env.BUILD_URL}",
           repo: env.GITHUB_REPO,
           account: env.GITHUB_ACCOUNT,
           sha: gitCommit,

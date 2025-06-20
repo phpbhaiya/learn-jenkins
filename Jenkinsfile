@@ -1,34 +1,46 @@
 pipeline {
   agent any
 
-  environment {
-    IMAGE_NAME = "basic-express-app"
-    TAG = "latest"
-  }
-
   stages {
-    stage('Checkout') {
+    stage('Notify GitHub (Pending)') {
       steps {
-        checkout scm
+        script {
+          githubNotify context: 'build', status: 'PENDING', description: 'Build started'
+        }
       }
     }
 
     stage('Build Docker Image') {
       steps {
         script {
-          sh "docker build -t $IMAGE_NAME:$TAG ."
+          sh "docker build -t my-app:latest ."
         }
       }
     }
 
-    stage('Run (Optional)') {
+    stage('Test Run') {
       steps {
         script {
-          sh "docker run -d -p 6666:6666 --name temp-app $IMAGE_NAME:$TAG"
-          sh "sleep 15"
-          sh "curl -f http://localhost:6666 || echo 'App failed to respond'"
-          sh "docker rm -f temp-app"
+          sh """
+            docker run -d -p 6666:6666 --name temp-app my-app:latest
+            sleep 30
+            docker exec temp-app curl -f http://localhost:6666
+            docker rm -f temp-app
+          """
         }
+      }
+    }
+  }
+
+  post {
+    success {
+      script {
+        githubNotify context: 'build', status: 'SUCCESS', description: 'Build passed'
+      }
+    }
+    failure {
+      script {
+        githubNotify context: 'build', status: 'FAILURE', description: 'Build failed'
       }
     }
   }

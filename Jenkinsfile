@@ -1,47 +1,66 @@
 pipeline {
   agent any
 
+  environment {
+    IMAGE_NAME = 'basic-express-app'
+    TAG = 'latest'
+    GITHUB_CONTEXT = 'build'
+    GITHUB_CREDENTIALS_ID = 'github-creds' // Your GitHub token credentials in Jenkins
+    REPO = 'phpbhaiya/your-repo-name' // GitHub org/user + repo
+  }
+
   stages {
-    stage('Notify GitHub (Pending)') {
+    stage('Checkout') {
       steps {
+        checkout scm
         script {
-          githubNotify context: 'build', status: 'PENDING', description: 'Build started'
+          env.GIT_COMMIT = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
         }
+      }
+    }
+
+    stage('Notify GitHub - PENDING') {
+      steps {
+        githubNotify context: env.GITHUB_CONTEXT, status: 'PENDING',
+          description: 'Build started',
+          repo: env.REPO,
+          sha: env.GIT_COMMIT,
+          credentialsId: env.GITHUB_CREDENTIALS_ID
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        script {
-          sh "docker build -t my-app:latest ."
-        }
+        sh "docker build -t $IMAGE_NAME:$TAG ."
       }
     }
 
     stage('Test Run') {
       steps {
-        script {
-          sh """
-            docker run -d -p 6666:6666 --name temp-app my-app:latest
-            sleep 30
-            docker exec temp-app curl -f http://localhost:6666
-            docker rm -f temp-app
-          """
-        }
+        sh """
+          docker run -d -p 6666:6666 --name temp-app $IMAGE_NAME:$TAG
+          sleep 5
+          docker exec temp-app curl -f http://localhost:6666
+          docker rm -f temp-app
+        """
       }
     }
   }
 
   post {
     success {
-      script {
-        githubNotify context: 'build', status: 'SUCCESS', description: 'Build passed'
-      }
+      githubNotify context: env.GITHUB_CONTEXT, status: 'SUCCESS',
+        description: 'Build succeeded',
+        repo: env.REPO,
+        sha: env.GIT_COMMIT,
+        credentialsId: env.GITHUB_CREDENTIALS_ID
     }
     failure {
-      script {
-        githubNotify context: 'build', status: 'FAILURE', description: 'Build failed'
-      }
+      githubNotify context: env.GITHUB_CONTEXT, status: 'FAILURE',
+        description: 'Build failed',
+        repo: env.REPO,
+        sha: env.GIT_COMMIT,
+        credentialsId: env.GITHUB_CREDENTIALS_ID
     }
   }
 }
